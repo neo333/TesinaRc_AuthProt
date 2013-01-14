@@ -35,7 +35,7 @@ void Server::Run(const Uint16 port_num) throw(const char*){
 		}else{
 			if(result>0){
 #ifdef _DEBUG
-				std::cout << "@DEBUG: Attività in corso!\n";
+				std::cout << "@DEBUG: Attivita' in corso!\n";
 #endif
 				if(this->IsReadyHost(0)){
 					std::cout << "Nuova connessione in arrivo ...\n\n";
@@ -51,13 +51,13 @@ void Server::OpenConnection(const Uint16 port_num) throw(const char*){
 	if(this->Is_ServerActive()==true){
 		throw "Server già attivo!";
 	}
-	this->server=this->connessioni[0];
 	if(port_num!=0) this->port_number=port_num;
 	if(SDLNet_ResolveHost(&this->indirizzo_ip,NULL,this->port_number)!=0){
 		throw SDLNet_GetError();
 	}
 
-	this->server=SDLNet_TCP_Open(&this->indirizzo_ip);
+	this->connessioni[0]=SDLNet_TCP_Open(&this->indirizzo_ip);
+	this->server=this->connessioni[0];
 	if(this->server==NULL){
 		throw SDLNet_GetError();
 	}
@@ -119,6 +119,12 @@ void Server::AcceptNuovoClient(void) throw(const char*){
 		this->connessioni.insert(std::pair<ID_Host,TCPsocket>(this->count_id,new_client));
 		this->AddTCPSocket_ToListner(new_client);
 		this->count_id++;
+
+#if _DEBUG
+		const char mess_enter[]="Welcome! Server TesinaRC al suo servizio!\r\n";
+		SDLNet_TCP_Send(new_client,mess_enter,strlen(mess_enter));
+#endif
+		SDL_CreateThread(Server::script_client, void *data);
 	}
 }
 

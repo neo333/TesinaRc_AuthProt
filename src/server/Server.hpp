@@ -31,6 +31,13 @@ private:
 	void CloseConnection(void);
 
 	Uint16 port_number;
+	typedef struct {
+		SDL_Thread* id_thread;
+		TCPsocket connessione;
+		ID_Host id_host;
+	} Data_scriptClient;
+	typedef std::map<ID_Host, Data_scriptClient> ListaHost;
+
 	std::map<ID_Host, TCPsocket> connessioni;
 	typedef std::map<ID_Host,TCPsocket>::iterator IteratoreConnessioni;
 	typedef std::map<ID_Host,TCPsocket>::const_iterator IteratoreConnessioniConst;
@@ -43,12 +50,14 @@ private:
 	inline const bool IsReadyHost(const ID_Host _id){
 		IteratoreConnessioni it=this->connessioni.find(_id);
 		if(it==this->connessioni.end()) return false;
-		TCPsocket& sock=(*it).second;
+		TCPsocket sock=(*it).second;
 		if(SDLNet_SocketReady(sock)) return true;
 		return false;
 	}
 	void AcceptNuovoClient(void) throw(const char*);
+
+	static int script_client(void* data);
 };
 
-} /* namespace tesina_rc */
-#endif /* SERVER_HPP_ */
+}
+#endif
