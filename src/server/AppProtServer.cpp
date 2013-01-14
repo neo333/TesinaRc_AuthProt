@@ -6,7 +6,6 @@
  */
 
 #include "AppProtServer.hpp"
-#include <com_def.hpp>
 #include <cstdlib>
 #include <ctime>
 
@@ -17,34 +16,29 @@ AppProtServer::AppProtServer():login_request(false),auth_ok(false){
 }
 
 int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
-	_out.clear();
-	if(_in.size()<4){
+	if(_out.size()>0){
+		_out.clear();
+	}
+	if(_in.size()<5){
 		return 0;
 	}
-	HeaderAuthProt header;
-	header.type_cmd=(Uint8)(_in[0]);
-	if(this->auth_ok==false){
-		if(header.type_cmd!=0x20 && header.type_cmd!=0x21){
-			AppProtServer::MakeError(_out,"E' necessario autorizzare il client prima di eseguire una richiesta\n");
-			return -1;
+	
+	Packet mess;
+	if(this->MakePacket(_in,mess)==0){
+		if(this->auth_ok==false){
+			if(mess.header.len_payload>1024){
+				AppProtServer::MakeError(_out,"Richiesta non autorizzata!\n");
+				return -1;
+			}
 		}
-	}
-	header.len_payload=(Uint32)(_in.substr(1,4).data());
-	if(_in.size()-4 < header.len_payload){
-		if(this->auth_ok==false && header.len_payload>1024){
-			AppProtServer::MakeError(_out,"Comando di autorizzazione non valido!\n");
-			return -1;
-		}
-		return 0;
 	}
 
-	std::string payload=_in.substr(4,header.len_payload);
-	_in=_in.substr(4+header.len_payload,std::string::npos);
-	switch(header.type_cmd){
+
+	switch(mess.header.type_cmd){
 	case 0x20:
 		srand(time(NULL));
 		this->nonce=rand();
-		AppProtServer::AppendHeader(_out,0x20,sizeof(this->nonce));
+		AppProtServer::AppendHeader(_out,0x22,sizeof(this->nonce));
 		AppProtServer::AppendBuffer(&this->nonce,sizeof(this->nonce),_out);
 		this->login_request=true;
 		return 1;
@@ -84,5 +78,14 @@ void AppProtServer::MakeError(std::string& _buffer, const char* mess) {
 }
 
 
+int AppProtServer::MakePacket(std::string& buffer,Packet& _out){
+	_out.body.clear();
+	AppProtServer::CastingBuffer(buffer,0,&_out.header.type_cmd);
+	AppProtServer::CastingBuffer(buffer,1,&_out.header.len_payload);
+	if(buffer.size()-5 < _out.header.len_payload) return 0;
+	_out.body=buffer.substr(4,_out.header.len_payload);
+	buffer=buffer.substr(4+_out.header.len_payload,std::string::npos);
+	return 1;
+}
 
 }

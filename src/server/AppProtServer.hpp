@@ -9,6 +9,7 @@
 #define APPPROT_HPP_
 
 #include <boost/noncopyable.hpp>
+#include <com_def.hpp>
 #include <SDL/SDL.h>
 #include <string>
 
@@ -31,6 +32,21 @@ private:
 	static void AppendBuffer(const void*, const size_t,std::string&);
 
 	static void MakeError(std::string& _buffer, const char*);
+
+	struct Packet{
+		HeaderAuthProt header;
+		std::string body;
+	};
+	int MakePacket(std::string&,Packet&);
+
+	template<class Type> static void CastingBuffer(const std::string& buffer,const size_t da,Type* _out){
+		size_t size_of_type=sizeof(Type);
+#ifdef _DEBUG
+		char prova[sizeof(Type)];
+		memcpy(prova,buffer.substr(da,sizeof(Type)).c_str(),sizeof(Type));
+#endif
+		memcpy(_out,buffer.substr(da,sizeof(Type)).c_str(),sizeof(Type));
+	}
 };
 
 }

@@ -95,13 +95,15 @@ void Server::AcceptNuovoClient(void) throw(const char*){
 void Server::UpData_Connections(void){
 	IteratoreLista it;
 	Data_scriptClient* curr;
-	for(it=this->connessioni.begin(); it!=this->connessioni.end(); it++){
+	for(it=this->connessioni.begin(); it!=this->connessioni.end(); ){
 		curr=&(*it).second;
 		if(curr->id_host!=0 && curr->exit==true){
 			SDL_WaitThread(curr->id_thread,NULL);
 			SDLNet_TCP_Close(curr->connessione);
 			curr->connessione=NULL;
-			this->connessioni.erase(it);
+			it=this->connessioni.erase(it);
+		}else{
+			it++;
 		}
 	}
 }
