@@ -9,6 +9,7 @@
 #include <string>
 #include <queue>
 #include "Server.hpp"
+#include "AppProtServer.hpp"
 
 namespace tesina_rc {
 
@@ -113,28 +114,28 @@ int Server::script_client(void* data) throw(const char*){
 	int bytes_rcv;
 	char buffer[MAX_BYTES_BUFFER];
 	std::string data_store_rcv;
+	std::string data_store_snd;
+	int result;
+	AppProtServer client_prot;
 	while(_data_cast->exit==false){
 		bytes_rcv=SDLNet_TCP_Recv(_data_cast->connessione, buffer, MAX_BYTES_BUFFER);
 		if(bytes_rcv<=0){
 			_data_cast->exit=true;
 		}else{
 			data_store_rcv.append(buffer,bytes_rcv);
-			Server::MakeCommand(data_store_rcv,_data_cast);
+			result=client_prot.ElaboraRichiesta(data_store_rcv,data_store_snd);
+			if(result){
+				int bytes_snd=SDLNet_TCP_Send(_data_cast->connessione, data_store_snd.data(), data_store_snd.size());
+				if(bytes_snd!=data_store_snd.size()){
+					_data_cast->exit=true;
+				}
+			}
+			if(result==-1){
+				_data_cast->exit=true;
+			}
 		}
 	}
 	return 0;
-}
-
-int Server::MakeCommand(std::string& buffer, Data_scriptClient* data){
-	int cmd=(int)(buffer[0]);
-	switch(cmd){
-	case 0x1f:
-
-	default:
-		buffer.clear();
-
-		break;
-	}
 }
 
 }

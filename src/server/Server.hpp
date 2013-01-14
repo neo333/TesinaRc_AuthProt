@@ -47,7 +47,6 @@ private:
 	void UpData_Connections(void);
 
 	static int script_client(void*) throw(const char*);
-	static int MakeCommand(std::string&,Data_scriptClient*);
 };
 
 }
