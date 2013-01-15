@@ -28,24 +28,17 @@ private:
 	bool auth_ok;
 	Uint32 nonce;
 
-	static void AppendHeader(std::string& buffer,const Uint8 cmd,const Uint32 data_len);
-	static void AppendBuffer(const void*, const size_t,std::string&);
-
-	static void MakeError(std::string& _buffer, const char*);
-
 	struct Packet{
 		HeaderAuthProt header;
-		std::string body;
+		char* body;
 	};
-	int MakePacket(std::string&,Packet&);
 
-	template<class Type> static void CastingBuffer(const std::string& buffer,const size_t da,Type* _out){
-		size_t size_of_type=sizeof(Type);
-#ifdef _DEBUG
-		char prova[sizeof(Type)];
-		memcpy(prova,buffer.substr(da,sizeof(Type)).c_str(),sizeof(Type));
-#endif
-		memcpy(_out,buffer.substr(da,sizeof(Type)).c_str(),sizeof(Type));
+	static void MakeError(std::string& _out,const char* mess){
+		HeaderAuthProt head;
+		head.type_cmd=0xFF;
+		head.len_payload=strlen(mess);
+		AppendData_intoString(&head,sizeof(head),_out);
+		AppendData_intoString(mess,strlen(mess),_out);
 	}
 };
 

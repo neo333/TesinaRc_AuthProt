@@ -101,7 +101,8 @@ void Server::UpData_Connections(void){
 			SDL_WaitThread(curr->id_thread,NULL);
 			SDLNet_TCP_Close(curr->connessione);
 			curr->connessione=NULL;
-			it=this->connessioni.erase(it);
+			this->connessioni.erase(it);
+			it=this->connessioni.end();
 		}else{
 			it++;
 		}

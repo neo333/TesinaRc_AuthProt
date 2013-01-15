@@ -8,6 +8,8 @@
 #include "AppProtServer.hpp"
 #include <cstdlib>
 #include <ctime>
+#include <RSA/RSA.h>
+#include <com_def.hpp>
 
 namespace tesina_rc {
 
@@ -22,31 +24,68 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 	if(_in.size()<5){
 		return 0;
 	}
-	
+
 	Packet mess;
-	if(this->MakePacket(_in,mess)==0){
+	PopData_fromString_andNoRemove(&mess.header,sizeof(HeaderAuthProt),_in);
+	if(this->auth_ok==false && mess.header.type_cmd!=0x20 && mess.header.type_cmd!=0x21){
+		AppProtServer::MakeError(_out,"E' necessario autenticarsi prima di richiedere servizi!\n");
+		return -1;
+	}
+	if(_in.size()-5 < mess.header.len_payload){
 		if(this->auth_ok==false){
 			if(mess.header.len_payload>1024){
 				AppProtServer::MakeError(_out,"Richiesta non autorizzata!\n");
 				return -1;
+			}else{
+				return 0;
 			}
+		}else{
+			return 0;
 		}
 	}
+	PopData_fromString(&mess,5+mess.header.len_payload,_in);
 
 
 	switch(mess.header.type_cmd){
 	case 0x20:
 		srand(time(NULL));
 		this->nonce=rand();
-		AppProtServer::AppendHeader(_out,0x22,sizeof(this->nonce));
-		AppProtServer::AppendBuffer(&this->nonce,sizeof(this->nonce),_out);
+		HeaderAuthProt head_snd;
+		head_snd.type_cmd=0x22;
+		head_snd.len_payload=sizeof(this->nonce);
+		AppendData_intoString(&head_snd,sizeof(HeaderAuthProt),_out);
+		AppendData_intoString(&this->nonce,sizeof(this->nonce),_out);
 		this->login_request=true;
 		return 1;
 	case 0x21:
 		if(this->login_request==true){
-			//TODO:: fare!
-			AppProtServer::MakeError(_out,"Server non ha ancora implementato certificato di autorizzazione!\n");
-			return -1;
+			std::cout << "Provo a decriptare\n";
+			std::string decryp_mess=RSA::Decrypt(mess.body,public_key_client);
+			std::cout << "decriptato!\n";
+			std::string nonce_str=decryp_mess.substr(0,sizeof(this->nonce));
+			decryp_mess.erase(0,sizeof(this->nonce));
+			size_t find=decryp_mess.find("\r\n");
+			if(find==std::string::npos){
+				AppProtServer::MakeError(_out,"Richiesta di autorizzazione non corretta!\n");
+				return -1;
+			}
+			std::string nickname=decryp_mess.substr(0,find);
+			decryp_mess.erase(0,find+2);
+			std::string pass=decryp_mess;
+
+			Uint32 nonce_rcv;
+			PopData_fromString_andNoRemove(&nonce_rcv,sizeof(Uint32),nonce_str);
+			if(nonce_rcv==this->nonce){
+				HeaderAuthProt head;
+				head.type_cmd=0x23;
+				head.len_payload=0;
+				AppendData_intoString(&head_snd,sizeof(HeaderAuthProt),_out);
+				this->auth_ok=true;
+				return 1;
+			}else{
+				AppProtServer::MakeError(_out,"Autorizzazione non corretta, tentativo di intrusione nel sistema rilevato!\n");
+				return -1;
+			}
 		}else{
 			AppProtServer::MakeError(_out,"Autorizzazione non avviata!\n");
 			return -1;
@@ -54,38 +93,10 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 		break;
 	default:
 		AppProtServer::MakeError(_out,"Comando non riconosciuto!\n");
-		return 0;
+		return -1;
 	}
 
 	return 0;
-}
-
-void AppProtServer::AppendHeader(std::string& buffer, const Uint8 cmd, const Uint32 data_len) {
-	AppProtServer::AppendBuffer(&cmd,sizeof(Uint8),buffer);
-	AppProtServer::AppendBuffer(&data_len,sizeof(Uint32),buffer);
-}
-
-void AppProtServer::AppendBuffer(const void* data, const size_t len,std::string& buffer) {
-	char* p=(char*)(data);
-	for(register size_t i=0; i<len; i++){
-		buffer.push_back(p[i]);
-	}
-}
-
-void AppProtServer::MakeError(std::string& _buffer, const char* mess) {
-	AppProtServer::AppendHeader(_buffer,0xFF,strlen(mess));
-	AppProtServer::AppendBuffer(mess,strlen(mess),_buffer);
-}
-
-
-int AppProtServer::MakePacket(std::string& buffer,Packet& _out){
-	_out.body.clear();
-	AppProtServer::CastingBuffer(buffer,0,&_out.header.type_cmd);
-	AppProtServer::CastingBuffer(buffer,1,&_out.header.len_payload);
-	if(buffer.size()-5 < _out.header.len_payload) return 0;
-	_out.body=buffer.substr(4,_out.header.len_payload);
-	buffer=buffer.substr(4+_out.header.len_payload,std::string::npos);
-	return 1;
 }
 
 }

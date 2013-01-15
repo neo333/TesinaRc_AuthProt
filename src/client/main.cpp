@@ -8,14 +8,19 @@
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_net.h>
+#include <iostream>
 #include "Client.hpp"
 
 int main(int n_param, char** l_param){
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDLNet_Init();
 
-	tesina_rc::Client myclient;
-	myclient.Run();
+	try{
+		tesina_rc::Client app;
+		app.Run();
+	}catch(const char* err){
+		std::cerr << err << "\n\n";
+	}
 
 	SDLNet_Quit();
 	SDL_Quit();

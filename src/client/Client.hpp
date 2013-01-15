@@ -1,26 +1,30 @@
-#ifndef __CLIENT__HPP
-#define __CLIENT__HPP
+/*
+ * Client.hpp
+ *
+ *  Created on: 15/gen/2013
+ *      Author: neo
+ */
 
-#include <boost/noncopyable.hpp>
+#ifndef CLIENT_HPP_
+#define CLIENT_HPP_
+
 #include <SDL/SDL_net.h>
+#include <boost/noncopyable.hpp>
 
 namespace tesina_rc {
 
 class Client: private boost::noncopyable{
 public:
-	Client(void){
-
-	}
-
+	Client();
 	void Run();
-private:
-	IPaddress indirizzo_ip;
-	TCPsocket connessione;
 
-	void OpenConnection();
-	void CloseConnection();
+private:
+	TCPsocket connessione;
+	IPaddress indirizzo_ip;
+
+	void OpenConnection(void);
+	void CloseConnection(void);
 };
 
 }
-
 #endif
