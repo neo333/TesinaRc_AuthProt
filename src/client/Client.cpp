@@ -17,11 +17,19 @@ Client::Client():connessione(NULL){
 }
 
 void Client::Run() {
-	std::cout << "Connessione ...\n\n";
+	std::cout << "Connessione al server...\n\n";
 	this->OpenConnection();
 
 	//DEBUG
-	std::cout << "Debug ...\n\n";
+	std::string nickname;
+	std::string password;
+	std::cout << "Inserire dati identificativi\n";
+	std::cout << "\tNickname: ";
+	std::cin >> nickname;
+	std::cout << "\tPassword: ";
+	std::cin >> password;
+	std::cout << "\n\n";
+
 	std::string request;
 	HeaderAuthProt head;
 	int bytes;
@@ -31,6 +39,7 @@ void Client::Run() {
 	head.len_payload=0;
 	AppendData_intoString(&head,sizeof(head),request);
 	SDLNet_TCP_Send(this->connessione,request.c_str(),request.size());
+	std::cout << "Invio richiesta di login...\n\n";
 	bytes=SDLNet_TCP_Recv(this->connessione,buffer,1024);
 	request.clear();
 	AppendData_intoString(buffer,bytes,request);
@@ -40,7 +49,14 @@ void Client::Run() {
 	}
 	std::string to_cryp;
 	to_cryp.assign(request.c_str(),head.len_payload);
-	to_cryp+="biagio\r\nbiagio";
+	Uint32 nonce_reuq;
+	tesina_rc::PopData_fromString_andNoRemove(&nonce_reuq,sizeof(nonce_reuq),to_cryp);
+	to_cryp+=nickname;
+	to_cryp+="\r\n";
+	to_cryp+=password;
+	std::cout << "Il server ha richiesto la verifica del nonce!\n"
+		"   Nonce richiesto: " << nonce_reuq << "\n"
+		         "   Codifica in corso...\n\n";
 	std::string cryp=RSA::Encrypt(to_cryp,private_key_client);
 
 	head.type_cmd=0x21;
@@ -49,9 +65,10 @@ void Client::Run() {
 	AppendData_intoString(&head,sizeof(HeaderAuthProt),request);
 	AppendData_intoString(cryp.c_str(),cryp.size(),request);
 	SDLNet_TCP_Send(this->connessione,request.c_str(),request.size());
+	std::cout << "Nonce codificato e richiesta di autorizzazione inviata al server!\n\n";
 	//----
 
-	std::cout << "termina...\n";
+	std::cout << "Client termina la connessione col server! E termina programma!\n\n";
 	this->CloseConnection();
 }
 

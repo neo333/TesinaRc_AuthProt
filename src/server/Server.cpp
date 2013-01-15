@@ -82,9 +82,12 @@ void Server::AcceptNuovoClient(void) throw(const char*){
 		new_client=NULL;
 	}else{
 		//TODO: rivedere l'algoritmo!
+		std::cout << "Nuova connessione accettata!\n";
+		std::cout << "\tID CLIENT: "<<this->count_id<<"\n\n";
 		Data_scriptClient _temp(this->count_id,NULL,new_client);
 		this->connessioni.insert(std::pair<ID_Host,Data_scriptClient>(this->count_id,_temp));
 		this->connessioni[this->count_id].id_thread=SDL_CreateThread(Server::script_client, &this->connessioni[this->count_id]);
+		this->count_id++;
 	}
 }
 

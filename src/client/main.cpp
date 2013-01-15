@@ -24,5 +24,9 @@ int main(int n_param, char** l_param){
 
 	SDLNet_Quit();
 	SDL_Quit();
+
+#ifdef WIN32
+	system("pause");
+#endif
 	return 0;
 }

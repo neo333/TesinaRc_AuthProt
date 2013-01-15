@@ -48,6 +48,7 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 
 	switch(mess.header.type_cmd){
 	case 0x20:
+		std::cout << "Richiesta di Login\n";
 		srand(time(NULL));
 		this->nonce=rand();
 		HeaderAuthProt head_snd;
@@ -56,19 +57,21 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 		AppendData_intoString(&head_snd,sizeof(HeaderAuthProt),_out);
 		AppendData_intoString(&this->nonce,sizeof(this->nonce),_out);
 		this->login_request=true;
+		std::cout << "\tNonce: "<<this->nonce<<"\n";
+		std::cout << "\tNonce inviato. In attesa di verifica...\n\n";
 		return 1;
 	case 0x21:
 		if(this->login_request==true){
-			std::cout << "Provo a decriptare\n";
+			std::cout << "Il client ha risposto alla verifica del nonce, calcolo validità in corso...\n";
 			std::string to_decryp;
 			to_decryp.assign(mess.body,mess.header.len_payload);
 			std::string decryp_mess=RSA::Decrypt(to_decryp,public_key_client);
-			std::cout << "decriptato!\n";
 			std::string nonce_str=decryp_mess.substr(0,sizeof(this->nonce));
 			decryp_mess.erase(0,sizeof(this->nonce));
 			size_t find=decryp_mess.find("\r\n");
 			if(find==std::string::npos){
 				AppProtServer::MakeError(_out,"Richiesta di autorizzazione non corretta!\n");
+				std::cout << "\tRichiesta non eseguita correttamente!\n\n";
 				return -1;
 			}
 			std::string nickname=decryp_mess.substr(0,find);
@@ -77,15 +80,21 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 
 			Uint32 nonce_rcv;
 			PopData_fromString_andNoRemove(&nonce_rcv,sizeof(Uint32),nonce_str);
+			std::cout << "\tNonce ricevuto: "<<nonce_rcv<<"\n";
 			if(nonce_rcv==this->nonce){
 				HeaderAuthProt head;
 				head.type_cmd=0x23;
 				head.len_payload=0;
 				AppendData_intoString(&head_snd,sizeof(HeaderAuthProt),_out);
 				this->auth_ok=true;
+				std::cout << "\tRichiesta di autorizzazione confermata!\n"
+					"\t   DATI DI ACCESSO RICHIESTI:\n"
+					"\t     Nickname: "<<nickname<<"\n"
+					"\t     Password: "<<pass<<"\n\n";
 				return 1;
 			}else{
 				AppProtServer::MakeError(_out,"Autorizzazione non corretta, tentativo di intrusione nel sistema rilevato!\n");
+				std::cout << "\tRisposta di validità non corretta! Tentativo di intrusione nel sistema rilevato!\n\n";
 				return -1;
 			}
 		}else{
