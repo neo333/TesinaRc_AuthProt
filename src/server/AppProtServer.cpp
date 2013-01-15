@@ -43,7 +43,7 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 			return 0;
 		}
 	}
-	PopData_fromString(&mess,5+mess.header.len_payload,_in);
+	PopData_fromString(&mess,sizeof(HeaderAuthProt)+mess.header.len_payload,_in);
 
 
 	switch(mess.header.type_cmd){
@@ -60,7 +60,9 @@ int AppProtServer::ElaboraRichiesta(std::string& _in, std::string& _out) {
 	case 0x21:
 		if(this->login_request==true){
 			std::cout << "Provo a decriptare\n";
-			std::string decryp_mess=RSA::Decrypt(mess.body,public_key_client);
+			std::string to_decryp;
+			to_decryp.assign(mess.body,mess.header.len_payload);
+			std::string decryp_mess=RSA::Decrypt(to_decryp,public_key_client);
 			std::cout << "decriptato!\n";
 			std::string nonce_str=decryp_mess.substr(0,sizeof(this->nonce));
 			decryp_mess.erase(0,sizeof(this->nonce));

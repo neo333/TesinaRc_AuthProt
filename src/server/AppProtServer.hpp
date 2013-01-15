@@ -30,7 +30,7 @@ private:
 
 	struct Packet{
 		HeaderAuthProt header;
-		char* body;
+		char body[1024];
 	};
 
 	static void MakeError(std::string& _out,const char* mess){

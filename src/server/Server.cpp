@@ -85,10 +85,6 @@ void Server::AcceptNuovoClient(void) throw(const char*){
 		Data_scriptClient _temp(this->count_id,NULL,new_client);
 		this->connessioni.insert(std::pair<ID_Host,Data_scriptClient>(this->count_id,_temp));
 		this->connessioni[this->count_id].id_thread=SDL_CreateThread(Server::script_client, &this->connessioni[this->count_id]);
-#if _DEBUG
-		const char mess_enter[]="Welcome! Server TesinaRC al suo servizio!\r\n";
-		SDLNet_TCP_Send(new_client,mess_enter,strlen(mess_enter));
-#endif
 	}
 }
 

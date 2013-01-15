@@ -29,7 +29,7 @@ void Client::Run() {
 
 	head.type_cmd=0x20;
 	head.len_payload=0;
-	AppendData_intoString(&head,sizeof(HeaderAuthProt),request);
+	AppendData_intoString(&head,sizeof(head),request);
 	SDLNet_TCP_Send(this->connessione,request.c_str(),request.size());
 	bytes=SDLNet_TCP_Recv(this->connessione,buffer,1024);
 	request.clear();
@@ -40,15 +40,14 @@ void Client::Run() {
 	}
 	std::string to_cryp;
 	to_cryp.assign(request.c_str(),head.len_payload);
+	to_cryp+="biagio\r\nbiagio";
 	std::string cryp=RSA::Encrypt(to_cryp,private_key_client);
 
-	std::string pay_final=cryp;
-	pay_final+="biagio\r\nbiagio";
 	head.type_cmd=0x21;
-	head.len_payload=pay_final.size();
+	head.len_payload=cryp.size();
 	request.clear();
 	AppendData_intoString(&head,sizeof(HeaderAuthProt),request);
-	//AppendData_intoString(pay_final.c_str(),pay_final.size(),request);
+	AppendData_intoString(cryp.c_str(),cryp.size(),request);
 	SDLNet_TCP_Send(this->connessione,request.c_str(),request.size());
 	//----
 
