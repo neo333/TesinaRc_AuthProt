@@ -9,7 +9,6 @@
 #define CLIENT_HPP_
 
 #include <SDL/SDL_net.h>
-#include <string>
 #include <boost/noncopyable.hpp>
 
 namespace tesina_rc {

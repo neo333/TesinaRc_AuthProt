@@ -16,7 +16,7 @@ Client::Client():connessione(NULL){
 
 }
 
-void Client::Run(const std::string& _host, const std::string& _port) {
+void Client::Run(const std::string& _host, const std::string _port) {
 	std::cout << "Connessione al server...\n\n";
 	this->OpenConnection(_host,atoi(_port.c_str()));
 

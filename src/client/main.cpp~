@@ -16,7 +16,7 @@ int main(int n_param, char** l_param){
 	SDLNet_Init();
 
 	try{
-		if(n_param!=3){
+		if(n_param!=2){
 			throw "Sintassi del comando non valida!";
 		}
 		tesina_rc::Client app;
